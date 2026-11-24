@@ -7,7 +7,16 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-from clients import CODE_RE, PYTHON_CLIENT, RUST_CLIENT, WILLIAM_CLIENT, Client
+from clients import (
+    CODE_RE,
+    PYTHON_CLIENT,
+    PYTHON_RELEASE_CLIENT,
+    RUST_CLIENT,
+    RUST_RELEASE_CLIENT,
+    WILLIAM_CLIENT,
+    WILLIAM_RELEASE_CLIENT,
+    Client,
+)
 from containers import ExitedWaitStrategy, exit_code, logs, read_file, with_envs
 from transit import TRANSIT_ALIASES, relayed_connections, transit_on
 
@@ -17,21 +26,18 @@ PAYLOAD = bytes(range(256)) * 4096
 WORK_DIR = "/tmp"
 PAYLOAD_PATH = f"{WORK_DIR}/interop-payload.bin"
 
+CLIENTS = [
+    pytest.param(PYTHON_CLIENT, id=PYTHON_CLIENT.name),
+    pytest.param(WILLIAM_CLIENT, id=WILLIAM_CLIENT.name),
+    pytest.param(RUST_CLIENT, id=RUST_CLIENT.name),
+    pytest.param(PYTHON_RELEASE_CLIENT, id=PYTHON_RELEASE_CLIENT.name),
+    pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
+    pytest.param(RUST_RELEASE_CLIENT, id=RUST_RELEASE_CLIENT.name),
+]
 
-@pytest.mark.parametrize(
-    "sender, receiver",
-    [
-        pytest.param(PYTHON_CLIENT, PYTHON_CLIENT, id="pythonmain-to-pythonmain"),
-        pytest.param(WILLIAM_CLIENT, WILLIAM_CLIENT, id="williammain-to-williammain"),
-        pytest.param(PYTHON_CLIENT, WILLIAM_CLIENT, id="pythonmain-to-williammain"),
-        pytest.param(WILLIAM_CLIENT, PYTHON_CLIENT, id="williammain-to-pythonmain"),
-        pytest.param(RUST_CLIENT, RUST_CLIENT, id="rustmain-to-rustmain"),
-        pytest.param(PYTHON_CLIENT, RUST_CLIENT, id="pythonmain-to-rustmain"),
-        pytest.param(RUST_CLIENT, PYTHON_CLIENT, id="rustmain-to-pythonmain"),
-        pytest.param(WILLIAM_CLIENT, RUST_CLIENT, id="williammain-to-rustmain"),
-        pytest.param(RUST_CLIENT, WILLIAM_CLIENT, id="rustmain-to-williammain"),
-    ],
-)
+
+@pytest.mark.parametrize("receiver", CLIENTS)
+@pytest.mark.parametrize("sender", CLIENTS)
 def test_file(
     sender: Client,
     receiver: Client,

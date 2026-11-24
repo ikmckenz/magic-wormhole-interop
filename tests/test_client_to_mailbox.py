@@ -6,18 +6,33 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-from clients import APPID, CODE_RE, PYTHON_CLIENT, RUST_CLIENT, WILLIAM_CLIENT, Client
+from clients import (
+    APPID,
+    CODE_RE,
+    PYTHON_CLIENT,
+    PYTHON_RELEASE_CLIENT,
+    RUST_CLIENT,
+    RUST_RELEASE_CLIENT,
+    WILLIAM_CLIENT,
+    WILLIAM_RELEASE_CLIENT,
+    Client,
+)
 from containers import logs, with_envs
 
 PAYLOAD = b"interop"
 PAYLOAD_PATH = "/tmp/interop-payload.bin"
 
+CLIENTS = [
+    pytest.param(PYTHON_CLIENT, id=PYTHON_CLIENT.name),
+    pytest.param(WILLIAM_CLIENT, id=WILLIAM_CLIENT.name),
+    pytest.param(RUST_CLIENT, id=RUST_CLIENT.name),
+    pytest.param(PYTHON_RELEASE_CLIENT, id=PYTHON_RELEASE_CLIENT.name),
+    pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
+    pytest.param(RUST_RELEASE_CLIENT, id=RUST_RELEASE_CLIENT.name),
+]
 
-@pytest.mark.parametrize(
-    "client",
-    [PYTHON_CLIENT, WILLIAM_CLIENT, RUST_CLIENT],
-    ids=lambda client: client.name,
-)
+
+@pytest.mark.parametrize("client", CLIENTS)
 def test_register_code(
     client: Client, client_images: Mapping[Client, str], mailbox_image: str
 ) -> None:

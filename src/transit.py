@@ -6,7 +6,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-TRANSIT_IMAGE = str(Path(__file__).parent.parent / "images" / "transit" / "dev")
+TRANSIT_IMAGE = str(Path(__file__).parent.parent / "images" / "transit" / "upstream")
 # We use the real address because wormhole-william hardcodes it, not configurable
 TRANSIT_ALIAS = "transit.magic-wormhole.io"
 TRANSIT_PORT = 4001

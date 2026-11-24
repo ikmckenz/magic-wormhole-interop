@@ -5,8 +5,25 @@ from mailbox import MAILBOX_IMAGE
 import pytest
 from testcontainers.core.image import DockerImage
 
-from clients import PYTHON_CLIENT, RUST_CLIENT, WILLIAM_CLIENT, Client
+from clients import (
+    PYTHON_CLIENT,
+    PYTHON_RELEASE_CLIENT,
+    RUST_CLIENT,
+    RUST_RELEASE_CLIENT,
+    WILLIAM_CLIENT,
+    WILLIAM_RELEASE_CLIENT,
+    Client,
+)
 from transit import TRANSIT_IMAGE
+
+ALL_CLIENTS = (
+    PYTHON_CLIENT,
+    WILLIAM_CLIENT,
+    RUST_CLIENT,
+    PYTHON_RELEASE_CLIENT,
+    WILLIAM_RELEASE_CLIENT,
+    RUST_RELEASE_CLIENT,
+)
 
 
 @pytest.fixture(scope="session")
@@ -14,7 +31,7 @@ def client_images() -> Iterator[Mapping[Client, str]]:
     with ExitStack() as stack:
         yield {
             client: str(stack.enter_context(DockerImage(client.image)))
-            for client in (PYTHON_CLIENT, WILLIAM_CLIENT, RUST_CLIENT)
+            for client in ALL_CLIENTS
         }
 
 

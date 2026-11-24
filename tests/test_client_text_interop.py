@@ -7,24 +7,31 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-from clients import CODE_RE, PYTHON_CLIENT, WILLIAM_CLIENT, Client
+from clients import (
+    CODE_RE,
+    PYTHON_CLIENT,
+    PYTHON_RELEASE_CLIENT,
+    WILLIAM_CLIENT,
+    WILLIAM_RELEASE_CLIENT,
+    Client,
+)
 from containers import exit_code, logs, with_envs
 
 logger = logging.getLogger(__name__)
 
 MESSAGE = "interop transfer payload message 123456"
 
+TEXT_CLIENTS = [
+    pytest.param(PYTHON_CLIENT, id=PYTHON_CLIENT.name),
+    pytest.param(WILLIAM_CLIENT, id=WILLIAM_CLIENT.name),
+    pytest.param(PYTHON_RELEASE_CLIENT, id=PYTHON_RELEASE_CLIENT.name),
+    pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
+    # Rust client has no text transfer
+]
 
-@pytest.mark.parametrize(
-    "sender, receiver",
-    [
-        pytest.param(PYTHON_CLIENT, PYTHON_CLIENT, id="pythonmain-to-pythonmain"),
-        pytest.param(WILLIAM_CLIENT, WILLIAM_CLIENT, id="williammain-to-williammain"),
-        pytest.param(PYTHON_CLIENT, WILLIAM_CLIENT, id="pythonmain-to-williammain"),
-        pytest.param(WILLIAM_CLIENT, PYTHON_CLIENT, id="williammain-to-pythonmain"),
-        # Rust implementation doesn't do text transfer?
-    ],
-)
+
+@pytest.mark.parametrize("receiver", TEXT_CLIENTS)
+@pytest.mark.parametrize("sender", TEXT_CLIENTS)
 def test_text(
     sender: Client,
     receiver: Client,

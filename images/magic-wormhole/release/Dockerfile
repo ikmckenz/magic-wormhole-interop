@@ -8,4 +8,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install magic-wormhole directly
 RUN pip install --no-cache-dir magic-wormhole
 
-CMD ["wormhole"]
+ENTRYPOINT ["wormhole"]

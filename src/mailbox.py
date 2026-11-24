@@ -5,7 +5,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-MAILBOX_IMAGE = str(Path(__file__).parent.parent / "images" / "mailbox" / "dev")
+MAILBOX_IMAGE = str(Path(__file__).parent.parent / "images" / "mailbox" / "upstream")
 MAILBOX_ALIAS = "mailbox"
 MAILBOX_PORT = 4000
 MAILBOX_READY = "websocket listening"

@@ -8,11 +8,14 @@ from transit import TRANSIT_HELPER_URL, TRANSIT_RELAY_URL
 
 IMAGES = Path(__file__).parent.parent / "images"
 
-CLIENT_IMAGE = str(IMAGES / "magic-wormhole" / "dev")
-WILLIAM_IMAGE = str(IMAGES / "wormhole-william" / "dev")
-RUST_IMAGE = str(IMAGES / "magic-wormhole-rs" / "dev")
+PYTHON_IMAGE = str(IMAGES / "magic-wormhole" / "upstream")
+PYTHON_RELEASE_IMAGE = str(IMAGES / "magic-wormhole" / "release")
+WILLIAM_IMAGE = str(IMAGES / "wormhole-william" / "upstream")
+WILLIAM_RELEASE_IMAGE = str(IMAGES / "wormhole-william" / "release")
+RUST_IMAGE = str(IMAGES / "magic-wormhole-rs" / "upstream")
+RUST_RELEASE_IMAGE = str(IMAGES / "magic-wormhole-rs" / "release")
 
-# The default appid can't change it on wormhole-william at least
+# The default appid, can't change it on wormhole-william at least
 APPID = "lothar.com/wormhole/text-or-file-xfer"
 
 # python and wormhole-william print "Wormhole code is:",
@@ -49,8 +52,8 @@ class Client(ABC):
 
 
 class PythonClient(Client):
-    name = "pythonmain"
-    image = CLIENT_IMAGE
+    name = "pythonupstream"
+    image = PYTHON_IMAGE
     binary = "wormhole"
 
     def env(self, mailbox_url: str) -> Mapping[str, str]:
@@ -74,7 +77,7 @@ class PythonClient(Client):
 
 
 class WilliamClient(Client):
-    name = "williammain"
+    name = "williamupstream"
     image = WILLIAM_IMAGE
     binary = "wormhole-william"
 
@@ -96,7 +99,7 @@ class WilliamClient(Client):
 
 
 class RustClient(Client):
-    name = "rustmain"
+    name = "rustupstream"
     image = RUST_IMAGE
     binary = "wormhole-rs"
 
@@ -121,6 +124,24 @@ class RustClient(Client):
         raise NotImplementedError("no text transfer in rust client")
 
 
+class PythonReleaseClient(PythonClient):
+    name = "pythonrelease"
+    image = PYTHON_RELEASE_IMAGE
+
+
+class WilliamReleaseClient(WilliamClient):
+    name = "williamrelease"
+    image = WILLIAM_RELEASE_IMAGE
+
+
+class RustReleaseClient(RustClient):
+    name = "rustrelease"
+    image = RUST_RELEASE_IMAGE
+
+
 PYTHON_CLIENT = PythonClient()
 WILLIAM_CLIENT = WilliamClient()
 RUST_CLIENT = RustClient()
+PYTHON_RELEASE_CLIENT = PythonReleaseClient()
+WILLIAM_RELEASE_CLIENT = WilliamReleaseClient()
+RUST_RELEASE_CLIENT = RustReleaseClient()
