@@ -1,9 +1,7 @@
 import logging
-from collections.abc import Mapping
-from mailbox import MAILBOX_RELAY_URL, mailbox_on
+from collections.abc import Callable
 
 import pytest
-from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
@@ -14,8 +12,10 @@ from clients import (
     WILLIAM_CLIENT,
     WILLIAM_RELEASE_CLIENT,
     Client,
+    local_python_clients,
 )
-from containers import exit_code, logs, with_envs
+from containers import client_container, exit_code, logs
+from mailbox import mailbox_on
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,9 @@ TEXT_CLIENTS = [
     pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
     # Rust client has no text transfer
 ]
+TEXT_CLIENTS.extend(
+    pytest.param(client, id=client.name) for client in local_python_clients()
+)
 
 
 @pytest.mark.parametrize("receiver", TEXT_CLIENTS)
@@ -35,16 +38,13 @@ TEXT_CLIENTS = [
 def test_text(
     sender: Client,
     receiver: Client,
-    client_images: Mapping[Client, str],
     mailbox_image: str,
+    image_for: Callable[[Client], str],
 ) -> None:
     with (
         Network(docker_network_kw={"driver": "bridge", "internal": True}) as network,
         mailbox_on(mailbox_image, network),
-        with_envs(
-            DockerContainer(client_images[sender], network=network),
-            sender.env(MAILBOX_RELAY_URL),
-        )
+        client_container(image_for(sender), sender, network)
         .with_command(sender.send_text(MESSAGE))
         .waiting_for(LogMessageWaitStrategy(CODE_RE)) as sending,
     ):
@@ -53,10 +53,7 @@ def test_text(
         code = match.group(1)
 
         with (
-            with_envs(
-                DockerContainer(client_images[receiver], network=network),
-                receiver.env(MAILBOX_RELAY_URL),
-            )
+            client_container(image_for(receiver), receiver, network)
             .with_command(receiver.receive_text(code))
             .waiting_for(LogMessageWaitStrategy(MESSAGE)) as receiving
         ):

@@ -1,9 +1,7 @@
 import logging
-from collections.abc import Mapping
-from mailbox import MAILBOX_ALIAS, MAILBOX_RELAY_URL, mailbox_on
+from collections.abc import Callable
 
 import pytest
-from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
@@ -16,8 +14,10 @@ from clients import (
     WILLIAM_CLIENT,
     WILLIAM_RELEASE_CLIENT,
     Client,
+    local_python_clients,
 )
-from containers import ExitedWaitStrategy, exit_code, logs, read_file, with_envs
+from containers import ExitedWaitStrategy, client_container, exit_code, logs, read_file
+from mailbox import MAILBOX_ALIAS, mailbox_on
 from transit import TRANSIT_ALIASES, relayed_connections, transit_on
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,9 @@ CLIENTS = [
     pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
     pytest.param(RUST_RELEASE_CLIENT, id=RUST_RELEASE_CLIENT.name),
 ]
+CLIENTS.extend(
+    pytest.param(client, id=client.name) for client in local_python_clients()
+)
 
 
 @pytest.mark.parametrize("receiver", CLIENTS)
@@ -41,9 +44,9 @@ CLIENTS = [
 def test_file(
     sender: Client,
     receiver: Client,
-    client_images: Mapping[Client, str],
     mailbox_image: str,
     transit_image: str,
+    image_for: Callable[[Client], str],
 ) -> None:
     with (
         # A network per peer, with the two mailbox and transit joined to both,
@@ -61,10 +64,7 @@ def test_file(
         receiver_network.connect(transit.get_wrapped_container().id, TRANSIT_ALIASES)
 
         with (
-            with_envs(
-                DockerContainer(client_images[sender], network=sender_network),
-                sender.env(MAILBOX_RELAY_URL),
-            )
+            client_container(image_for(sender), sender, sender_network)
             .with_copy_into_container(PAYLOAD, PAYLOAD_PATH)
             .with_command(sender.send_file(PAYLOAD_PATH))
             .waiting_for(LogMessageWaitStrategy(CODE_RE)) as sending
@@ -74,10 +74,7 @@ def test_file(
             code = match.group(1)
 
             with (
-                with_envs(
-                    DockerContainer(client_images[receiver], network=receiver_network),
-                    receiver.env(MAILBOX_RELAY_URL),
-                )
+                client_container(image_for(receiver), receiver, receiver_network)
                 .with_kwargs(entrypoint="/bin/sh", working_dir=WORK_DIR)
                 .with_command(["-c", receiver.receive_file(code, PAYLOAD_PATH)])
                 .waiting_for(ExitedWaitStrategy()) as receiving

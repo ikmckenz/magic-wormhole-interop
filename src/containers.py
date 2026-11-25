@@ -1,10 +1,12 @@
 import io
 import tarfile
-from collections.abc import Mapping
 
 from requests.exceptions import ConnectionError
 from testcontainers.core.container import DockerContainer
+from testcontainers.core.network import Network
 from testcontainers.core.waiting_utils import WaitStrategy, WaitStrategyTarget
+
+from clients import Client
 
 EXIT_TIMEOUT = 30
 STILL_RUNNING = frozenset(("created", "running", "paused", "restarting"))
@@ -22,9 +24,9 @@ class ExitedWaitStrategy(WaitStrategy):
             )
 
 
-def with_envs(container: DockerContainer, envs: Mapping[str, str]) -> DockerContainer:
-    """Set a whole mapping's worth of environment variables on `container`."""
-    for key, value in envs.items():
+def client_container(image: str, client: Client, network: Network) -> DockerContainer:
+    container = DockerContainer(image, network=network)
+    for key, value in client.env().items():
         container.with_env(key, value)
     return container
 

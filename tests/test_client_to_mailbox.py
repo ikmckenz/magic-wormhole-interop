@@ -1,8 +1,6 @@
-from collections.abc import Mapping
-from mailbox import MAILBOX_RELAY_URL, mailbox_on, reserved_nameplates
+from collections.abc import Callable
 
 import pytest
-from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
@@ -16,8 +14,10 @@ from clients import (
     WILLIAM_CLIENT,
     WILLIAM_RELEASE_CLIENT,
     Client,
+    local_python_clients,
 )
-from containers import logs, with_envs
+from containers import client_container, logs
+from mailbox import mailbox_on, reserved_nameplates
 
 PAYLOAD = b"interop"
 PAYLOAD_PATH = "/tmp/interop-payload.bin"
@@ -30,26 +30,28 @@ CLIENTS = [
     pytest.param(WILLIAM_RELEASE_CLIENT, id=WILLIAM_RELEASE_CLIENT.name),
     pytest.param(RUST_RELEASE_CLIENT, id=RUST_RELEASE_CLIENT.name),
 ]
+CLIENTS.extend(
+    pytest.param(client, id=client.name) for client in local_python_clients()
+)
 
 
 @pytest.mark.parametrize("client", CLIENTS)
 def test_register_code(
-    client: Client, client_images: Mapping[Client, str], mailbox_image: str
+    client: Client,
+    mailbox_image: str,
+    image_for: Callable[[Client], str],
 ) -> None:
     with (
         Network(docker_network_kw={"driver": "bridge", "internal": True}) as network,
         mailbox_on(mailbox_image, network) as mailbox,
-        with_envs(
-            DockerContainer(client_images[client], network=network),
-            client.env(MAILBOX_RELAY_URL),
-        )
+        client_container(image_for(client), client, network)
         .with_copy_into_container(PAYLOAD, PAYLOAD_PATH)
         .with_command(client.send_file(PAYLOAD_PATH))
-        .waiting_for(LogMessageWaitStrategy(CODE_RE)) as client_container,
+        .waiting_for(LogMessageWaitStrategy(CODE_RE)) as sending,
     ):
         # 'send' allocates a code, then blocks waiting for a peer we never
         # provide, keeping the nameplate claimed.
-        match = CODE_RE.search(logs(client_container))
+        match = CODE_RE.search(logs(sending))
         assert match, "no wormhole code generated in client logs"
         nameplate = match.group(1).split("-")[0]
         reserved = reserved_nameplates(mailbox, APPID)
