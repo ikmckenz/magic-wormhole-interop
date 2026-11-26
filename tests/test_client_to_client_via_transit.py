@@ -20,11 +20,11 @@ from containers import ExitedWaitStrategy, client_container, exit_code, logs, re
 from mailbox import MAILBOX_ALIAS, mailbox_on
 from transit import TRANSIT_ALIASES, relayed_connections, transit_on
 
-logger = logging.getLogger(__name__)
-
-PAYLOAD = bytes(range(256)) * 4096
 WORK_DIR = "/tmp"
 PAYLOAD_PATH = f"{WORK_DIR}/interop-payload.bin"
+PAYLOAD = bytes(range(256)) * 4096
+
+logger = logging.getLogger(__name__)
 
 CLIENTS = [
     pytest.param(PYTHON_CLIENT, id=PYTHON_CLIENT.name),

@@ -6,6 +6,7 @@ from testcontainers.core.image import DockerImage
 
 from clients import Client
 from mailbox import MAILBOX_CONTEXT
+from router import ROUTER_CONTEXT
 from transit import TRANSIT_CONTEXT
 
 
@@ -41,4 +42,10 @@ def mailbox_image() -> Iterator[str]:
 @pytest.fixture(scope="session")
 def transit_image() -> Iterator[str]:
     with DockerImage(TRANSIT_CONTEXT) as image:
+        yield str(image)
+
+
+@pytest.fixture(scope="session")
+def router_image() -> Iterator[str]:
+    with DockerImage(ROUTER_CONTEXT) as image:
         yield str(image)
