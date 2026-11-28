@@ -1,4 +1,5 @@
 import io
+import logging
 import tarfile
 
 from requests.exceptions import ConnectionError
@@ -10,6 +11,16 @@ from clients import Client
 
 EXIT_TIMEOUT = 30
 STILL_RUNNING = frozenset(("created", "running", "paused", "restarting"))
+
+logger = logging.getLogger(__name__)
+
+
+class LoggingContainer(DockerContainer):
+    def stop(self, force: bool = True, delete_volume: bool = True) -> None:
+        # Capture container logs on shutdown always
+        if self._container is not None:
+            logger.warning(logs(self))
+        super().stop(force, delete_volume)
 
 
 class ExitedWaitStrategy(WaitStrategy):
@@ -25,7 +36,7 @@ class ExitedWaitStrategy(WaitStrategy):
 
 
 def client_container(image: str, client: Client, network: Network) -> DockerContainer:
-    container = DockerContainer(image, network=network)
+    container = LoggingContainer(image, network=network)
     for key, value in client.env().items():
         container.with_env(key, value)
     return container

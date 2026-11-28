@@ -51,6 +51,7 @@ def test_text(
         match = CODE_RE.search(logs(sending))
         assert match, "no wormhole code generated in sender logs"
         code = match.group(1)
+        logger.info(f"wormhole code {code}")
 
         with (
             client_container(image_for(receiver), receiver, network)
@@ -58,9 +59,7 @@ def test_text(
             .waiting_for(LogMessageWaitStrategy(MESSAGE)) as receiving
         ):
             receiving_logs = logs(receiving)
-            logger.warning(receiving_logs)
             assert MESSAGE in receiving_logs
             assert exit_code(receiving) == 0, "receiver did not exit cleanly"
 
-        logger.warning(logs(sending))
         assert exit_code(sending) == 0, "sender did not exit cleanly"

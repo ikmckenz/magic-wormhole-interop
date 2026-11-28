@@ -72,6 +72,7 @@ def test_file(
             match = CODE_RE.search(logs(sending))
             assert match, "no wormhole code generated in sender logs"
             code = match.group(1)
+            logger.info(f"wormhole code {code}")
 
             with (
                 client_container(image_for(receiver), receiver, receiver_network)
@@ -90,15 +91,12 @@ def test_file(
                 .waiting_for(ExitedWaitStrategy()) as receiving
             ):
                 received = read_file(receiving, PAYLOAD_PATH)
+                logger.info("read file")
                 assert received is not None, f"no file at {PAYLOAD_PATH}"
                 assert received == PAYLOAD
 
-                receiving_logs = logs(receiving)
-                logger.warning(receiving_logs)
                 assert exit_code(receiving) == 0, "receiver did not exit cleanly"
 
-            sending_logs = logs(sending)
-            logger.warning(sending_logs)
             assert exit_code(sending) == 0, "sender did not exit cleanly"
 
         # Both peers are gone by now, so the relay has already written its

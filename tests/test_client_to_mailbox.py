@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 
 import pytest
@@ -21,6 +22,9 @@ from mailbox import mailbox_on, reserved_nameplates
 
 PAYLOAD = b"interop"
 PAYLOAD_PATH = "/tmp/interop-payload.bin"
+
+logger = logging.getLogger(__name__)
+
 
 CLIENTS = [
     pytest.param(PYTHON_CLIENT, id=PYTHON_CLIENT.name),
@@ -54,6 +58,7 @@ def test_register_code(
         match = CODE_RE.search(logs(sending))
         assert match, "no wormhole code generated in client logs"
         nameplate = match.group(1).split("-")[0]
+        logger.info(f"got nameplate {nameplate}")
         reserved = reserved_nameplates(mailbox, APPID)
         assert reserved is not None, "could not read the mailbox database"
         assert nameplate in reserved
